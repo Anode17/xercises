@@ -1,0 +1,63 @@
+---
+title: "Maximum Simulated Likelyhood"
+author: "Aslan Bakirov"
+date: '2022-10-15'
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+
+ifelse(!require("sandwich"),install.packages("sandwich"))
+library(lmtest)
+library(ggplot2)
+library(dplyr)
+library(readxl)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r simulation}
+
+## import the data
+Odds <- read_excel("Odds.xlsx") %>% data.frame() %>% select(-...3) %>% filter(Year>2007) 
+
+## run the initial logit to see the coefs
+
+df<-data.frame(Y=Odds$Best.Picture.Oscar.statuette., X=Odds$Metacritic,sllik=as.numeric(length(Odds)))
+
+lgt1<-glm(Y ~ X,data=df,family = binomial())
+
+beta_1<-as.numeric(lgt1$coefficients[1])
+beta_2<-as.numeric(lgt1$coefficients[2])
+
+vars<-coeftest(lgt1, vcov.=vcovHC(lgt1, type="HC1"))[2,2]
+## assuming Normal
+set.seed(1701)
+N=1000
+
+u_s= rnorm(N)
+
+  
+ llik<- function(param) {
+    #p_win=1/(1+exp(-1*(b1+(b2+u_s*sd2)*df$X[i])))
+
+   b1<- param[1]
+   b2<- param[2]
+   sd2<- param[3]
+   
+  ll=mean(sapply(c(df$Y,df$X), function(Y,X) log(1/(1+exp(-1*(b1+(b2+u_s*sd2)*df$X))))*df$Y + (1-df$Y)*log(1-1/(1+exp(-1*(b1+(b2+u_s*sd2)*df$X))))))
+  return(ll)
+}
+
+res<-maxLik(llik,start = c(b1=beta_1,b2=beta_2,sd2=0.05))
+
+res$estimate
+
+knitr::kable(res$hessian)
+
+
+```
+
