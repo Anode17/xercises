@@ -1,7 +1,5 @@
 ---
-title: "Maximum Simulated Likelyhood"
-author: "Aslan Bakirov"
-date: '2022-10-15'
+title: "Maximum Simulated Likelihood"
 output: html_document
 editor_options: 
   chunk_output_type: console
