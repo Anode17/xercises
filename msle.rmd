@@ -1,5 +1,5 @@
 ---
-author: Aslan Bakirov
+author: "Aslan Bakirov"
 title: "Maximum Simulated Likelihood"
 output: html_document
 editor_options: 
@@ -14,7 +14,7 @@ library(ggplot2)
 library(dplyr)
 library(readxl)
 library(maxLik)
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
 Sometimes limited dependent variable (LDV) models so heterogenous that the probability value varies individually. In those cases, it would require us integrating over the unobserved heterogeneity, which is analytically an impasse, but quite manageable with simulation:  
