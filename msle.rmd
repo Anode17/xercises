@@ -1,4 +1,5 @@
 ---
+author: Aslan Bakirov
 title: "Maximum Simulated Likelihood"
 output: html_document
 editor_options: 
@@ -7,17 +8,45 @@ editor_options:
 
 ```{r setup, include=FALSE}
 
-ifelse(!require("sandwich"),install.packages("sandwich"))
+ifelse(!require("sandwich"),install.packages("sandwich"),library(sandwich))
 library(lmtest)
 library(ggplot2)
 library(dplyr)
 library(readxl)
+library(maxLik)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+Sometimes limited dependent variable (LDV) models so heterogenous that the probability value varies individually. In those cases, it would require us integrating over the unobserved heterogeneity, which is analytically an impasse, but quite manageable with simulation:  
+
+$$f(y_i|x_i)=E_u[~f(y_i|x_i,u_i)~]=\int_uf(y_i|x_i,u_i)~f(u)du$$
+The expression above shows that **CEF** of y given x can be expressed as an expectation over the support of *u*, an unobserved variation in our CEF. Now having the new CEF, to derive inference on that we need to integrate it, over the support of *u*, yet we can't because the distribution/ mass of this variation is unobserved.  
+To proceed, we should solve the integral with simulation methods. As such, in the following steps we can handle it:
+
+* assume $u_i \sim N(0,\sigma_u)$    
+* draw a random subsample from the above distribution, size S, $u^S$    
+* for an individual $i$:    
+  * estimate the subsimulator $\tilde f(y_i|x_i,u^s_i)$ with first element of the above draw   
+    * repeat the last step for all elements of the *u^s*
+  * average them out: $\frac{1}{S}\sum_s \tilde f(y_i|x_i,u^s_i)$    
+* repeat for all individuals $i$ in the sample   
+* $logLik=\sum_i^N log(\tilde f(y_i|x_i,u^s_i))$ is the simulated likelihood to be maximized. 
+
+## Random Logit example   
+
+This model works with a probability of choosing Y given covariate X, just like in a basic logit, with an exception: 
+$$P[y_i=1|x_i]=\Lambda(\beta_1+\beta_{2i}x_i)$$ 
+that is, we would have to estimate *N+1* parameters, $\beta_2$ for each individual and a $\beta_1$. But we can proceed by modeling this variation as unobserved heterogeneity in $\beta_2$, such as:  
+$$\beta_{2i}=\beta_2+u_i\sim N(0,\sigma_u)$$ 
+$$u_i=\frac{\beta_{2i}-\beta_2}{\sigma_u}\sim N(0,1)$$  
+
+Expressing it as the integral above we get:  
+
+$$E_u[~f(y_i|x_i,u_i)~]=\int_u\Lambda(\beta_1+(\beta_{2}+\sigma_u)x_i)^{y_i}*\{1-\Lambda(\beta_1+(\beta_{2}+\sigma_u)x_i)\}^{1-y_i}~f(u_i)du_i$$ 
+Which doesn't have a closed-form solution. Need to simulate.(   
 
 
-```{r simulation}
+```{r simulation,cache=TRUE}
 
 ## import the data
 Odds <- read_excel("Odds.xlsx") %>% data.frame() %>% select(-...3) %>% filter(Year>2007) 
@@ -28,17 +57,23 @@ df<-data.frame(Y=Odds$Best.Picture.Oscar.statuette., X=Odds$Metacritic,sllik=as.
 
 lgt1<-glm(Y ~ X,data=df,family = binomial())
 
+## saving the coefficients
 beta_1<-as.numeric(lgt1$coefficients[1])
 beta_2<-as.numeric(lgt1$coefficients[2])
 
-vars<-coeftest(lgt1, vcov.=vcovHC(lgt1, type="HC1"))[2,2]
+## and white sd errors
+sds<-coeftest(lgt1, vcov.=vcovHC(lgt1, type="HC1"))[2,2]
+
+
 ## assuming Normal
+
 set.seed(1701)
+
 N=1000
 
-u_s= rnorm(N)
+u_s= rnorm(N,0,1)
 
-  
+## loglikelihood function:  
  llik<- function(param) {
     #p_win=1/(1+exp(-1*(b1+(b2+u_s*sd2)*df$X[i])))
 
@@ -46,13 +81,20 @@ u_s= rnorm(N)
    b2<- param[2]
    sd2<- param[3]
    
-  ll=mean(sapply(c(df$Y,df$X), function(Y,X) log(1/(1+exp(-1*(b1+(b2+u_s*sd2)*df$X))))*df$Y + (1-df$Y)*log(1-1/(1+exp(-1*(b1+(b2+u_s*sd2)*df$X))))))
+  ll=mean(
+    sapply(
+      c(df$Y,df$X),
+      function(Y,X) log(1/(1+exp(-1*(b1+(b2+u_s*sd2)*df$X))))*df$Y+(1-df$Y)*log(1-1/(1+exp(-1*(b1+(b2+u_s*sd2)*df$X))))
+      )
+    )
   return(ll)
 }
 
-res<-maxLik(llik,start = c(b1=beta_1,b2=beta_2,sd2=0.05))
+## optimizing the log-likelihood:  
+ 
+res<-maxLik(llik,start = c(b1=beta_1,b2=beta_2,sd2=sds))
 
-res$estimate
+round(res$estimate,5)
 
 knitr::kable(res$hessian)
 
