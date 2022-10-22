@@ -42,7 +42,7 @@ $$u_i=\frac{\beta_{2i}-\beta_2}{\sigma_u}\sim N(0,1)$$
 
 Expressing it as the integral above we get:
 
-$$ \int_u\Lambda(\beta_1+(\beta_{2}+\sigma_u)x_i)^{y_i}*\\ 
+$$ \int_u\Lambda(\beta_1+(\beta_{2}+\sigma_u)x_i)^{y_i}* 
 \{1-\Lambda(\beta_1+(\beta_{2}+\sigma_u)x_i)\}^{1-y_i}~f(u_i)du_i $$
 
 Which doesn’t have a closed-form solution. Need to simulate.(
