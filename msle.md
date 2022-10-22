@@ -7,12 +7,13 @@ that the probability value varies individually. In those cases, it would
 require us integrating over the unobserved heterogeneity, which is
 analytically an impasse, but quite manageable with simulation:
 
-$$f(y_i|x_i)=E_u[~f(y_i|x_i,u_i)~]=\int_uf(y_i|x_i,u_i)~f(u)du$$ The
-expression above shows that **CEF** of y given x can be expressed as an
-expectation over the support of *u*, an unobserved variation in our CEF.
-Now having the new CEF, to derive inference on that we need to integrate
-it, over the support of *u*, yet we can’t because the distribution/ mass
-of this variation is unobserved.  
+$$f(y_i|x_i)= E_u[~f(y_i|x_i,u_i)~] = \int_uf(y_i|x_i,u_i)~f(u)du$$
+
+The expression above shows that **CEF** of y given x can be expressed as
+an expectation over the support of *u*, an unobserved variation in our
+CEF. Now having the new CEF, to derive inference on that we need to
+integrate it, over the support of *u*, yet we can’t because the
+distribution/ mass of this variation is unobserved.  
 To proceed, we should solve the integral with simulation methods. As
 such, in the following steps we can handle it:
 
@@ -24,8 +25,8 @@ such, in the following steps we can handle it:
         -   repeat the last step for all elements of the *u^s*
     -   average them out: $\frac{1}{S}\sum_s \tilde f(y_i|x_i,u^s_i)$  
 -   repeat for all individuals $i$ in the sample  
--   $logLik=\sum_i^N log(\tilde f(y_i|x_i,u^s_i))$ is the simulated
-    likelihood to be maximized.
+-   The simulated likelihood to be maximized becomes:
+    $$ logLik = \sum_i ^N log( \tilde f( y_i | x_i, u^ s_i) ) $$
 
 ## Random Logit example
 

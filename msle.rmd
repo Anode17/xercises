@@ -31,7 +31,8 @@ To proceed, we should solve the integral with simulation methods. As such, in th
     * repeat the last step for all elements of the *u^s*
   * average them out: $\frac{1}{S}\sum_s \tilde f(y_i|x_i,u^s_i)$    
 * repeat for all individuals $i$ in the sample   
-*  $ logLik= \sum_i^N log( \tilde f(y_i|x_i,u^s_i)) $  is the simulated likelihood to be maximized. 
+*  The simulated likelihood to be maximized becomes: 
+$$ logLik = \sum_i ^N log( \tilde f( y_i | x_i, u^ s_i) ) $$
 
 ## Random Logit example   
 
