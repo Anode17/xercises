@@ -94,11 +94,14 @@ u_s= rnorm(N,0,1)
  
 res<-maxLik(llik,start = c(b1=beta_1,b2=beta_2,sd2=sds))
 
-round(res$estimate,5)
+
+knitr::kable(rbind(simulated=round(res$estimate,5),originals=c(beta_1,beta_2,sds)),row.names = TRUE)
 ```
 
-    ##        b1        b2       sd2 
-    ## -16.39510   0.16520   0.00005
+|           |        b1 |        b2 |       sd2 |
+|:----------|----------:|----------:|----------:|
+| simulated | -16.39510 | 0.1652000 | 0.0000500 |
+| originals | -16.46906 | 0.1662065 | 0.0465801 |
 
 ``` r
 knitr::kable(res$hessian)
