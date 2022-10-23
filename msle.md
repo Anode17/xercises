@@ -69,39 +69,35 @@ sds<-coeftest(lgt1, vcov.=vcovHC(lgt1, type="HC1"))[2,2]
 
 set.seed(1701)
 
-N=1000
+N=500
 
 u_s= rnorm(N,0,1)
 
 ## loglikelihood function:  
  llik<- function(param) {
-    #p_win=1/(1+exp(-1*(b1+(b2+u_s*sd2)*df$X[i])))
-
    b1<- param[1]
    b2<- param[2]
    sd2<- param[3]
    
-  ll=mean(
-    sapply(
-      c(df$Y,df$X),
-      function(Y,X) log(1/(1+exp(-1*(b1+(b2+u_s*sd2)*df$X))))*df$Y+(1-df$Y)*log(1-1/(1+exp(-1*(b1+(b2+u_s*sd2)*df$X))))
-      )
-    )
+  ll=mean(sapply(
+      df$X,
+      function(X) mean(log(1/(1+exp(-1*(b1+(b2+u_s*sd2)*X))))*df$Y+(1-df$Y)*log(1-(1/(1+exp(-1*(b1+(b2+u_s*sd2)*X))))))))
+  
   return(ll)
 }
 
 ## optimizing the log-likelihood:  
  
-res<-maxLik(llik,start = c(b1=beta_1,b2=beta_2,sd2=sds))
+res<-maxLik(llik,start = c(b1=0,b2=0,sd2=0))
 
 
 knitr::kable(rbind(simulated=round(res$estimate,5),originals=c(beta_1,beta_2,sds)),row.names = TRUE)
 ```
 
-|           |        b1 |        b2 |       sd2 |
-|:----------|----------:|----------:|----------:|
-| simulated | -16.39510 | 0.1652000 | 0.0000500 |
-| originals | -16.46906 | 0.1662065 | 0.0465801 |
+|           |        b1 |         b2 |        sd2 |
+|:----------|----------:|-----------:|-----------:|
+| simulated |  -2.01704 | -0.0001400 | -0.0025900 |
+| originals | -16.46906 |  0.1662065 |  0.0465801 |
 
 ``` r
 knitr::kable(res$hessian)
@@ -109,6 +105,61 @@ knitr::kable(res$hessian)
 
 |     |         b1 |          b2 |          sd2 |
 |:----|-----------:|------------:|-------------:|
-| b1  | -0.0889844 |   -7.976675 |   -0.4444223 |
-| b2  | -7.9766749 | -717.978843 |  -39.3822197 |
-| sd2 | -0.4444223 |  -39.382220 | -719.5797291 |
+| b1  | -0.1020295 |   -8.445744 |    0.5569434 |
+| b2  | -8.4457441 | -708.559156 |   47.9741247 |
+| sd2 |  0.5569434 |   47.974125 | -665.5149765 |
+
+## Experiment with simulated data
+
+``` r
+set.seed(1701)
+N=500
+u_s<-rnorm(N)
+X<-rnorm(N,2,4)
+p=1/(1+exp(-1*(1+(2.3+u_s*0.4)*X)))
+
+Y=rbinom(N,1,p)
+
+table(Y)
+```
+
+    ## Y
+    ##   0   1 
+    ## 140 360
+
+``` r
+ llik<- function(param) {
+   b1<- param[1]
+   b2<- param[2]
+   sd2<- param[3]
+   
+  ll=mean(
+    sapply(
+      c(Y,X),
+      function(X) mean(log(1/(1+exp(-1*(b1+(b2+u_s*sd2)*X))))*Y+(1-Y)*log(1-1/(1+exp(-1*(b1+(b2+u_s*sd2)*X)))))
+      )
+    )
+  
+  return(ll)
+}
+
+res<-maxLik(llik,start = c(b1=-0.5,b2=2,sd2=0.02))
+
+
+knitr::kable(rbind(simulated=round(res$estimate,5),originals=c(1,2.3,0.4)),row.names = TRUE)
+```
+
+|           |      b1 |       b2 |     sd2 |
+|:----------|--------:|---------:|--------:|
+| simulated | 0.94446 | -0.00011 | 0.00126 |
+| originals | 1.00000 |  2.30000 | 0.40000 |
+
+``` r
+knitr::kable(res$hessian) 
+```
+
+|     |         b1 |         b2 |        sd2 |
+|:----|-----------:|-----------:|-----------:|
+| b1  | -0.2017275 | -0.3059775 | -0.0255351 |
+| b2  | -0.3059775 | -2.4125146 | -0.2040590 |
+| sd2 | -0.0255351 | -0.2040590 | -2.2390978 |
