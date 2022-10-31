@@ -21,10 +21,10 @@ Sometimes limited dependent variable (LDV) models are so heterogenous that the p
 
 $$f(y_i|x_i)= E_u[~f(y_i|x_i,u_i)~] = \int_uf(y_i|x_i,u_i)~f(u)du$$  
 
-The expression above shows that **CEF** of y given x can be expressed as an expectation over the support of *u*, an unobserved variation in our CEF. Now having the new CEF, to derive inference on that we need to integrate it, over the support of *u*, yet we can't because the distribution/ mass of this variation is unobserved.  
+The expression above shows that **CEF** of y given x can be formulated as an expectation over the support of *u*, an unobserved variation in our CEF. Now having the new CEF, to derive inference on that we need to integrate it, over the support of *u*, yet we can't because the distribution/ mass of this variation is unobserved.  
 To proceed, we should solve the integral with simulation methods. As such, in the following steps we can handle it:
 
-* assume $u_i \sim N(0,\sigma_u)$    
+* assume a distribution/mass, e.g. $u_i \sim N(0,\sigma)$    
 * draw a random subsample from the above distribution, size S, $u^S$    
 * for an individual $i$:    
   * estimate the subsimulator $\tilde f(y_i|x_i,u^s_i)$ with first element of the above draw   
@@ -40,14 +40,14 @@ $$ logLik = \sum_i ^N log( \tilde f( y_i | x_i, u ^s_i) ) $$
 This model works with a probability of choosing Y given covariate X, just like in a basic logit, with an exception: 
 $$P[y_i=1|x_i]=\Lambda(\beta_1+\beta_{2i}x_i)$$ 
 that is, we would have to estimate *N+1* parameters, $\beta_2$ for each individual and a $\beta_1$. But we can proceed by modeling this variation as unobserved heterogeneity in $\beta_2$, such as:  
-$$\beta_{2i}=\beta_2+u_i\sim N(0,\sigma_u)$$ 
-$$u_i=\frac{\beta_{2i}-\beta_2}{\sigma_u}\sim N(0,1)$$  
+$$\beta_{2i}=\beta_2+u_i\sim N(0,\sigma)$$ 
+$$u_i=\frac{\beta_{2i}-\beta_2}{\sigma}\sim N(0,1)$$  
 
 Expressing it as the integral above we get:  
 
 
-$$ \int_u\Lambda(\beta_1+(\beta_{2}+\sigma_u)x_i)^{y_i}* 
-\\{1-\Lambda(\beta_1+(\beta_{2}+\sigma_u)x_i)\\}^{1-y_i}~f(u_i)du_i $$ 
+$$ \int_u\Lambda(\beta_1+(\beta_{2}+\sigma ~u_i)x_i)^{y_i}* 
+\\{1-\Lambda(\beta_1+(\beta_{2}+\sigma ~u_i)x_i)\\}^{1-y_i}~f(u_i)du_i $$ 
 
 Which doesn't have a closed-form solution. Need to simulate.(   
 
@@ -85,9 +85,8 @@ u_s= rnorm(N,0,1)
    b2<- param[2]
    sd2<- param[3]
    
-  ll=mean(sapply(
-      df$X,
-      function(X) mean(log(1/(1+exp(-1*(b1+(b2+u_s*sd2)*X))))*df$Y+(1-df$Y)*log(1-(1/(1+exp(-1*(b1+(b2+u_s*sd2)*X))))))))
+  ll=mean(
+    mapply(function(X,Y) mean(log(1/(1+exp(-1*(b1+(b2+u_s*sd2)*X))))*Y+(1-Y)*log(1-1/(1+exp(-1*(b1+(b2+u_s*sd2)*X))))),df$X,df$Y))
   
   return(ll)
 }
@@ -96,9 +95,9 @@ u_s= rnorm(N,0,1)
  
 res<-maxLik(llik,start = c(b1=0,b2=0,sd2=0))
 
-
+## resulting estimates
 knitr::kable(rbind(simulated=round(res$estimate,5),originals=c(beta_1,beta_2,sds)),row.names = TRUE)
-
+## hessian
 knitr::kable(res$hessian)
 
 ```
@@ -106,39 +105,42 @@ knitr::kable(res$hessian)
 ## Experiment with simulated data   
 
 
-```{r no-luck}
+```{r luck-no-luck}
+
 set.seed(1701)
+
 N=500
+
 u_s<-rnorm(N)
-X<-rnorm(N,2,4)
-p=1/(1+exp(-1*(1+(2.3+u_s*0.4)*X)))
 
-Y=rbinom(N,1,p)
+df<-data.frame(X=rnorm(N, 1, 2))
+ 
+df$Y<-rbinom(N, 1, p=1/(1+exp(-1*(-1+(2.3+u_s*0.4)*df$X))))
 
-table(Y)
+## checking the balance
+table(df$Y)
 
+## the likelihood function
 
  llik<- function(param) {
-   b1<- param[1]
-   b2<- param[2]
-   sd2<- param[3]
+  
+  b1<- param[1]
+  b2<- param[2]
+  sd2<- param[3]
    
   ll=mean(
-    sapply(
-      c(Y,X),
-      function(X) mean(log(1/(1+exp(-1*(b1+(b2+u_s*sd2)*X))))*Y+(1-Y)*log(1-1/(1+exp(-1*(b1+(b2+u_s*sd2)*X)))))
-      )
-    )
-  
+    mapply(function(X,Y) mean(log(1/(1+exp(-1*(b1+(b2+u_s*sd2)*X))))*Y+
+                                (1-Y)*log(1-1/(1+exp(-1*(b1+(b2+u_s*sd2)*X))))), df$X, df$Y))
   return(ll)
-}
-
+ }
+ 
+## running the optimization
 res<-maxLik(llik,start = c(b1=-0.5,b2=2,sd2=0.02))
 
-
-knitr::kable(rbind(simulated=round(res$estimate,5),originals=c(1,2.3,0.4)),row.names = TRUE)
-
-knitr::kable(res$hessian) 
+## resulting estimates
+knitr::kable(rbind(simulated=round(res$estimate,5),originals=c(-1,2.3,0.4)),row.names = TRUE)
+## and the hessian
+knitr::kable(round(res$hessian,4))
  
 ```
 
