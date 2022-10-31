@@ -17,7 +17,7 @@ distribution/ mass of this variation is unobserved.
 To proceed, we should solve the integral with simulation methods. As
 such, in the following steps we can handle it:
 
--   assume a distribution/mass, e.g. $u_i \sim N(0,\sigma )$  
+-   assume a distribution/mass, e.g. \$ u_i N(0,) \$  
 -   draw a random subsample from the above distribution, size S, $u^S$  
 -   for an individual $i$:
     -   estimate the subsimulator $\tilde f(y_i|x_i,u^s_i)$ with first
