@@ -24,7 +24,7 @@ $$f(y_i|x_i)= E_u[~f(y_i|x_i,u_i)~] = \int_uf(y_i|x_i,u_i)~f(u)du$$
 The expression above shows that **CEF** of y given x can be formulated as an expectation over the support of *u*, an unobserved variation in our CEF. Now having the new CEF, to derive inference on that we need to integrate it, over the support of *u*, yet we can't because the distribution/ mass of this variation is unobserved.  
 To proceed, we should solve the integral with simulation methods. As such, in the following steps we can handle it:
 
-* assume a distribution/mass, e.g. $u_i \sim N(0,\sigma)$    
+* assume a distribution/mass, e.g. $u_i \sim N(0,\sigma )$    
 * draw a random subsample from the above distribution, size S, $u^S$    
 * for an individual $i$:    
   * estimate the subsimulator $\tilde f(y_i|x_i,u^s_i)$ with first element of the above draw   
